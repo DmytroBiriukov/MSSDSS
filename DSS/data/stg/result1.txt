@@ -1,0 +1,16 @@
+
+
+ Processing state node No.2
+ case 1
+
+ nonstat state 2prob = 0.950000.*exp(-0.000600000*t)
+
+ Processing state node No.0
+ case 3
+
+ nonstat state 0prob = (-0.633333).*exp(-0.000600000*t)+(0.653333)
+
+ Processing state node No.1
+ case 3
+
+ nonstat state 1prob = (-0.633333).*exp(-0.000600000*t)+(0.663333)

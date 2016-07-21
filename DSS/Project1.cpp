@@ -1,0 +1,44 @@
+//---------------------------------------------------------------------------
+
+#include <vcl.h>
+#pragma hdrstop
+//---------------------------------------------------------------------------
+USEFORM("Unit1.cpp", SystemLayerForm);
+USEFORM("Unit2.cpp", ComponentForm);
+USEFORM("Unit3.cpp", mainForm);
+USEFORM("Unit4.cpp", S3ScomponentForm);
+USEFORM("DBComponents.cpp", ComponentsDBForm);
+USEFORM("Unit5.cpp", Form5);
+USEFORM("Unit6.cpp", Form6);
+USEFORM("Unit7.cpp", Form7);
+//---------------------------------------------------------------------------
+WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
+{
+        try
+        {
+                 Application->Initialize();
+                 Application->CreateForm(__classid(TmainForm), &mainForm);
+                 Application->CreateForm(__classid(TComponentsDBForm), &ComponentsDBForm);
+                 Application->CreateForm(__classid(TForm5), &Form5);
+                 Application->CreateForm(__classid(TForm6), &Form6);
+                 Application->CreateForm(__classid(TForm7), &Form7);
+                 Application->Run();
+        }
+        catch (Exception &exception)
+        {
+                 Application->ShowException(&exception);
+        }
+        catch (...)
+        {
+                 try
+                 {
+                         throw Exception("");
+                 }
+                 catch (Exception &exception)
+                 {
+                         Application->ShowException(&exception);
+                 }
+        }
+        return 0;
+}
+//---------------------------------------------------------------------------
