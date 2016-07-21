@@ -1,0 +1,363 @@
+
+//---------------------------------------------------------------------------
+//   class TPolynome by Dmitrij Birjukov
+//---------------------------------------------------------------------------
+
+#if !defined(POLYNOME)
+#define POLYNOME
+
+using namespace std;
+
+class TPolynome
+{ private:
+        double* a;
+        int d;
+        void reset(int );
+  public:
+        bool isVal();
+        bool isConst();
+        double value(double x);
+        double Int(double, double);
+        void integral();
+        void diff();
+        void simplify();
+        void init(double*, int);
+        void LSM_aprox(double*, double*,int);
+        int deg(){return d;}
+        friend TPolynome& operator+ (TPolynome&, TPolynome&);
+        friend TPolynome& operator+ (TPolynome&, double);
+        friend bool operator==(TPolynome&, double);
+        friend TPolynome& operator+ (double m, TPolynome& p){ return p+m;}
+        friend TPolynome& operator* (TPolynome&, TPolynome&);
+        friend TPolynome& operator* (TPolynome&, double);
+        friend TPolynome& operator* (double m, TPolynome& p) { return p*m;}
+        friend ostream& operator<<(ostream&, TPolynome&);
+        friend istream& operator>>(istream&, TPolynome&);
+        //ostream&
+        void polynome2TeX(ostream&);
+        void polynome2MatLab(ostream&);        
+        TPolynome& operator=(TPolynome&);
+        TPolynome& operator=(double);
+        TPolynome& operator^=(int);
+        TPolynome& operator+=(TPolynome&);
+        TPolynome& operator*=(TPolynome&);
+        TPolynome& operator+=(double m){ a[0]+=m; return *this;}
+        TPolynome& operator*=(double);
+        TPolynome& operator/=(double);
+        double& operator[] (int i){return a[i];}
+        TPolynome(){ d=1; a=new double[1]; a[0]=0.0;}
+        TPolynome(int);
+        TPolynome(istream&);
+        ~TPolynome(){/* delete[] a;*/}
+};
+//---------------------------------------------------------------------------
+TPolynome::TPolynome(int n)
+{ d=n;
+  a=new double[d];
+  for(int i=0;i<d;i++) a[i]=0.0;
+}
+//---------------------------------------------------------------------------
+void TPolynome::reset(int n)
+{ double* t=new double[n];
+  if(n>d)
+    { for(int i=0;i<d;i++) t[i]=a[i];
+      for(int i=d;i<n;i++) t[i]=0.0;
+    }else
+    { for(int i=d;i<n;i++) t[i]=a[i];
+    }
+  d=n;
+  delete[] a;
+  a=t;
+}
+//---------------------------------------------------------------------------
+TPolynome& TPolynome::operator= (TPolynome& p)
+{ int n=p.deg();
+  if(d!=n)
+    {if(d > 0) delete[] a;
+     d=n;
+     a=new double[d];
+    }
+  for(int i=0;i<d;i++) a[i]=p[i];
+  return *this;
+}
+//---------------------------------------------------------------------------
+bool TPolynome::isVal()
+{ if(d<2 && a[0]==0.0) {return false;}
+  else {return true;}
+}
+//---------------------------------------------------------------------------
+void TPolynome::simplify()
+{ /*
+  int n=d;
+  for(int i=d-1;i>=0;i--) if(a[i]==0) n--; else break;
+  if(n!=d) reset(n);
+  */
+}
+//---------------------------------------------------------------------------
+bool TPolynome::isConst()
+{// simplify();
+  if(d==1) {return true;} else {return false;}
+}
+//---------------------------------------------------------------------------
+TPolynome& TPolynome::operator= (double p)
+{ // just quick and simple way
+  if(d == 0) a=new double[1];
+  if(d > 1) { delete a; a=new double[1];} 
+  d=1;
+  this->a[0]=p;
+  return *this;
+}
+//---------------------------------------------------------------------------
+TPolynome& TPolynome::operator+= (TPolynome& p)
+{ int n=p.deg();
+  if(n>d) this->reset(n);
+  for(int i=0;i<n;i++) a[i]+=p[i];
+  return *this;
+}
+//---------------------------------------------------------------------------
+TPolynome& TPolynome::operator*= (TPolynome& p)
+{ int n=p.deg();
+  TPolynome t1(d+n-1), t2(d);
+  for(int i=0;i<d;i++) t2[i]=a[i];
+  t1=t2*p;
+  this->reset(d+n-1);
+  for(int i=0;i<d;i++) a[i]=t1[i];
+  return *this;
+}
+//---------------------------------------------------------------------------
+TPolynome& TPolynome::operator*= (double m)
+{ for(int i=0;i<d;i++) a[i]*=m;
+  return *this;
+}
+//---------------------------------------------------------------------------
+TPolynome& TPolynome::operator/=(double m)
+{ for(int i=0;i<d;i++) a[i]/=m;
+  return *this;
+}
+//---------------------------------------------------------------------------
+TPolynome& operator* (TPolynome& p1, TPolynome& p2)
+{ int n1=p1.deg();
+  int n2=p2.deg();
+  TPolynome* t=new TPolynome(n1+n2-1);
+  for(int k=0;k<n1;k++)
+    for(int i=0; i<n2; i++)
+      t->operator[](k+i)+=p1[k]*p2[i];
+  return *t;
+}
+//---------------------------------------------------------------------------
+TPolynome& operator* (TPolynome& p, double m)
+{ int n=p.deg();
+  TPolynome* t=new TPolynome(n);
+  for(int i=0;i<n;i++) t->operator[](i)=p[i]*m;
+  return *t;
+}
+//---------------------------------------------------------------------------
+TPolynome& operator+ (TPolynome& p, double m)
+{ int n=p.deg();
+  TPolynome* t=new TPolynome(n);
+  for(int i=0;i<n;i++) t->operator [](i)=p[i];
+  t->operator [](0)+=m;
+  return *t;
+}
+//---------------------------------------------------------------------------
+TPolynome& operator+ (TPolynome& p1, TPolynome& p2)
+{ int n1=p1.deg();
+  int n2=p2.deg();
+  if(n1<n2)
+  {TPolynome* t=new TPolynome(n2);
+   for(int i=0;i<n1;i++) t->operator [](i)=p1[i]+p2[i];
+   for(int i=n1;i<n2;i++) t->operator [](i)=p2[i];
+   return *t;
+  }else
+  {TPolynome* t=new TPolynome(n1);
+   for(int i=0;i<n2;i++) t->operator [](i)=p1[i]+p2[i];
+   for(int i=n2;i<n1;i++) t->operator [](i)=p1[i];
+   return *t;
+  }
+}
+//---------------------------------------------------------------------------
+ostream& operator<<(ostream& stream, TPolynome& p)
+{
+ int n=p.deg();
+ stream<<n<<"\n";
+ for(int i=0; i<n;i++)
+     { stream<<p[i]<<" ";
+     }
+ return stream;
+}
+
+//ostream&
+void TPolynome::polynome2TeX(ostream& stream)
+{
+ stream.setf(ios::fixed);
+ stream.setf(ios::showpoint);
+  stream.setf(ios::scientific);
+// stream.precision(4);
+ int n=deg();
+ for(int i=n-1;i>=0;i--)
+     { if(a[i]!=0.0)
+       { if(i<n-1 && a[i]>0.0) stream<<"+";
+         stream<<a[i];
+         if(i) stream<<"t^"<<i;
+       }
+     }
+}
+
+void TPolynome::polynome2MatLab(ostream& stream)
+{
+ stream.setf(ios::fixed);
+ stream.setf(ios::showpoint);
+ stream.setf(ios::scientific);
+ int n=deg();
+ for(int i=n-1;i>=0;i--)
+     { if(a[i]!=0.0)
+       { if(i<n-1 && a[i]>0.0) stream<<"+";
+         stream<<a[i];
+         for(int j=0;j<i;j++)
+         { if(j) stream<<".";
+           stream<<"*t";
+         }
+       }
+     }
+}
+
+istream& operator>>(istream& stream, TPolynome& p)
+{int n;
+ stream>>n;
+ p.reset(n);
+ for(int i=0;i<n;i++) stream>>p[i];
+ return stream;
+}
+
+TPolynome::TPolynome(istream& stream)
+{ int n;
+  stream>>n;
+  d=n;
+  a=new double[d];
+  double t;
+  for(int i=0;i<n;i++)
+  { stream>>t;
+    this->a[i]=t;
+  }  
+}
+//---------------------------------------------------------------------------
+bool operator==(TPolynome& p, double a)
+{ int n=p.deg();
+  if(a!=0.0)
+  { if(n==1 && p[0]==a) return true; else return false;
+  }else
+  { if(n==0||(n==1 && p[0]==a)) return true; else return false;
+  }
+}
+//---------------------------------------------------------------------------
+double TPolynome::value(double x)
+{ double value=0.0;
+  double power=1.0;
+  for(int i=0;i<d;i++)
+    { value+=power*a[i];
+      power*=x;
+    }
+  return value;
+}
+//---------------------------------------------------------------------------
+double TPolynome::Int(double t0, double t1)
+{ TPolynome t(d+1);
+  for(int i=0;i<d-1;i++) t[i+1]=a[i]/(i+1);
+  t[0]=0.0;
+  return ( t.value(t1)-t.value(t0) );
+}
+//---------------------------------------------------------------------------
+void TPolynome::integral()
+{ this->reset(d+1);
+  for(int i=d-1;i>0;i--) a[i]=a[i-1]/i;
+  a[0]=0.0;
+}
+//---------------------------------------------------------------------------
+void TPolynome::diff()
+{ for(int i=0;i<d;i++) a[i]=a[i+1]*(i+1);
+  this->reset(d-1);
+}
+//---------------------------------------------------------------------------
+void TPolynome::LSM_aprox(double* x, double* y, int n)
+{ double* s=new double[2*d-1];
+  double* t=new double[2*d-1];
+  double* xt=new double[n];
+  for(int j=0;j<n;j++) xt[j]=1.0;
+  for(int i=0;i<2*d;i++)
+     { t[i]=s[i]=0.0;
+       for(int j=0;j<n;j++)
+          { t[i]+=xt[j]*y[j];
+            s[i]+=xt[j];
+            xt[j]*=x[j];
+          }
+     }
+ double** c=new double*[d];
+ for(int i=0;i<d;i++)
+    { c[i]=new double[d];
+      for(int j=0;j<d;j++) c[i][j]=s[j+i];
+    }
+ for(int i=0;i<d;i++)
+    if(c[i][i])
+       { for(int j=i+1;j<d;j++) c[i][j]=c[i][j]/c[i][i];
+	 t[i]=t[i]/c[i][i];
+	 c[i][i]=1.0;
+         for(int k=i+1;k<d;k++)
+	    { for(int t=i+1;t<d;t++)
+	         c[k][t]-=c[k][i]*c[i][t];
+	      t[k]-=c[k][i]*t[i];
+	      c[k][i]=0.0;
+	    }
+       }
+ for(int i=d-1;i>0;i--)
+   for(int j=0;j<i;j++)
+       { t[j]-=t[i]*c[j][i];
+	 c[j][i]=0.0;
+       }
+ for(int i=0;i<d;i++) a[i]=t[i];
+// delete[] xt;
+// delete[] s;
+ for(int i=0;i<d;i++) delete[] c[i];
+ delete[] c;
+}
+//---------------------------------------------------------------------------
+TPolynome& TPolynome::operator^=(int n)
+{ int m=d;
+  this->reset(d+n);
+  for(int i=m-1;i>=0;i--)
+     { a[i+n]=a[i];
+       a[i]=0;
+     }
+  return *this;
+}
+
+void TPolynome::init(double* c, int n)
+{ this->reset(n);
+  for(int i=0;i<n;i++) a[i]=c[i];
+}
+//---------------------------------------------------------------------------
+#endif
+/*
+   enum fmt_flags {
+                    boolalpha   = 0x0001,
+                    dec         = 0x0002,
+                    fixed       = 0x0004, 
+                    hex         = 0x0008,
+                    internal    = 0x0010,
+
+                    left        = 0x0020,
+                    oct         = 0x0040,
+                    right       = 0x0080,
+                    scientific  = 0x0100,
+                    showbase    = 0x0200,
+                    showpoint   = 0x0400, 
+                    showpos     = 0x0800,
+                    skipws      = 0x1000,
+                    unitbuf     = 0x2000,
+                    uppercase   = 0x4000,
+                    adjustfield = left | right | internal,
+
+                    basefield   = dec | oct | hex,
+                    floatfield  = scientific | fixed
+                  };
+
+*/
